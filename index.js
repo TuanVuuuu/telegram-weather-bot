@@ -20,8 +20,10 @@ async function sendWeatherReport() {
         const { main, weather, name, clouds, rain } = res.data;
 
         const tempCurrent = main.temp;
-        const tempMin = main.temp_min ?? tempCurrent;
-        const tempMax = main.temp_max ?? tempCurrent;
+        const hasTempMin = typeof main.temp_min === 'number';
+        const hasTempMax = typeof main.temp_max === 'number';
+        const tempMin = hasTempMin ? main.temp_min : null;
+        const tempMax = hasTempMax ? main.temp_max : null;
 
         let rainMessage;
         if (rain || ['Rain', 'Drizzle', 'Thunderstorm'].includes(weather[0].main)) {
@@ -33,9 +35,10 @@ async function sendWeatherReport() {
         }
 
         let sunMessage;
-        if (tempMax >= 33 && (!clouds || clouds.all <= 40)) {
+        const tempForSun = typeof tempMax === 'number' ? tempMax : tempCurrent;
+        if (tempForSun >= 33 && (!clouds || clouds.all <= 40)) {
             sunMessage = '🔥 Dự kiến có nắng khá gắt vào ban ngày, mọi người nhớ chống nắng cẩn thận.';
-        } else if (tempMax >= 28) {
+        } else if (tempForSun >= 28) {
             sunMessage = '🌞 Nắng vừa, trời khá oi nhẹ, đi ra ngoài vẫn nên mang mũ/nón.';
         } else {
             sunMessage = '⛅ Nắng không quá gắt, thời tiết tương đối dễ chịu.';
@@ -50,13 +53,16 @@ async function sendWeatherReport() {
             feelMessage = '🥵 Trời khá nóng, mọi người nhớ uống nhiều nước và tránh ở ngoài trời quá lâu.';
         }
 
+        const tempRangeLines =
+            (hasTempMin ? `🔻 Nhiệt độ thấp nhất hôm nay: *${tempMin}°C*\n` : '') +
+            (hasTempMax ? `🔺 Nhiệt độ cao nhất hôm nay: *${tempMax}°C*\n` : '');
+
         const msg =
             `🌤️ *BẢN TIN THỜI TIẾT TỰ ĐỘNG* 🌤️\n\n` +
             `📍 Khu vực: *${name}*\n` +
             `Hiện tại trời đang *${weather[0].description}*.\n\n` +
             `🌡️ Nhiệt độ hiện tại: *${tempCurrent}°C*\n` +
-            `🔻 Nhiệt độ thấp nhất hôm nay: *${tempMin}°C*\n` +
-            `🔺 Nhiệt độ cao nhất hôm nay: *${tempMax}°C*\n` +
+            tempRangeLines +
             `💧 Độ ẩm: *${main.humidity}%*\n\n` +
             `${rainMessage}\n` +
             `${sunMessage}\n` +
@@ -71,8 +77,8 @@ async function sendWeatherReport() {
 }
 
 // --- 2. LẬP LỊCH CHẠY TỰ ĐỘNG (CRON JOB) ---
-// Chạy vào lúc 23:30 để test, sau này bạn đổi lại thành '30 6 * * *' cho đúng 6h30 sáng
-cron.schedule('30 23 * * *', () => {
+// Chạy vào lúc 6h30 sáng VN
+cron.schedule('30 6 * * *', () => {
     sendWeatherReport();
 }, {
     scheduled: true,
