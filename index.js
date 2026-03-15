@@ -33,8 +33,8 @@ async function sendWeatherReport() {
 }
 
 // --- 2. LẬP LỊCH CHẠY TỰ ĐỘNG (CRON JOB) ---
-// Chạy vào lúc 22:35 để test, sau này bạn đổi lại thành '30 6 * * *' cho đúng 6h30 sáng
-cron.schedule('35 22 * * *', () => {
+// Chạy vào lúc 23:00 để test, sau này bạn đổi lại thành '30 6 * * *' cho đúng 6h30 sáng
+cron.schedule('00 23 * * *', () => {
     sendWeatherReport();
 }, {
     scheduled: true,
